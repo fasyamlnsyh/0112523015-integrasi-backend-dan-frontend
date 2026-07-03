@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MahasiswaForm from "@/components/MahasiswaForm";
 import MahasiswaTable from "@/components/MahasiswaTable";
+
 import {
   createMahasiswa,
   deleteMahasiswa,
@@ -13,31 +14,83 @@ import {
   updateMahasiswa,
 } from "@/lib/api";
 
+import { getAllProdi, Prodi } from "@/lib/apiProdi";
+import { getUser, logout } from "@/lib/auth";
+
 export default function MahasiswaPage() {
+  const router = useRouter();
+
   const [mahasiswa, setMahasiswa] = useState<Mahasiswa[]>([]);
+  const [prodiList, setProdiList] = useState<Prodi[]>([]);
   const [selectedMahasiswa, setSelectedMahasiswa] = useState<Mahasiswa | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
+  const [filterProdi, setFilterProdi] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPage, setTotalPage] = useState(1);
+  const [role, setRole] = useState<string | null>("admin");
+  const [userName, setUserName] = useState<string>("Admin (Bypass)");
 
+  // =========================
+  // AUTH GUARD (REMOVED)
+  // =========================
+  
+  // =========================
+  // LOAD DATA
+  // =========================
   const loadMahasiswa = async () => {
     try {
       setLoading(true);
       setError("");
-      const data = await getMahasiswa();
-      setMahasiswa(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal terhubung ke API backend. Pastikan server backend sudah dijalankan.");
+      const result = await getMahasiswa({
+        search,
+        prodi_id: filterProdi,
+        page,
+        limit: 10,
+      });
+      setMahasiswa(result.data);
+      setTotalPage(result.meta.totalPage || 1);
+    } catch (err: any) {
+      const msg = err?.message || "";
+      if (msg.toLowerCase().includes("401") || msg.toLowerCase().includes("token")) {
+        setError("Autentikasi gagal (seharusnya tidak terjadi).");
+      } else {
+        setError("Gagal memuat data mahasiswa. Pastikan backend berjalan.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
+  const loadProdi = async () => {
+    try {
+      const data = await getAllProdi();
+      setProdiList(data || []);
+    } catch (err) {
+      console.error("Gagal load prodi:", err);
+      setProdiList([]);
+    }
+  };
+
   useEffect(() => {
-    loadMahasiswa();
+    const delayDebounceFn = setTimeout(() => {
+      loadMahasiswa();
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, filterProdi, page]);
+
+  useEffect(() => {
+    loadProdi();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // =========================
+  // SUBMIT (CREATE / UPDATE)
+  // =========================
   const handleSubmit = async (payload: MahasiswaInput) => {
     try {
       setMessage("");
@@ -45,116 +98,184 @@ export default function MahasiswaPage() {
 
       if (selectedMahasiswa) {
         await updateMahasiswa(selectedMahasiswa.id, payload);
-        setMessage("Data mahasiswa berhasil diperbarui");
+        setMessage("✅ Data berhasil diupdate!");
       } else {
         await createMahasiswa(payload);
-        setMessage("Data mahasiswa berhasil ditambahkan");
+        setMessage("✅ Data mahasiswa berhasil ditambahkan!");
       }
 
       setSelectedMahasiswa(null);
       await loadMahasiswa();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal menyimpan data");
+    } catch (err: any) {
+      setError(err?.message || "Gagal menyimpan data. Cek kembali inputan.");
     }
   };
 
+  // =========================
+  // DELETE
+  // =========================
   const handleDelete = async (id: number) => {
-    const confirmed = window.confirm("Yakin ingin menghapus data ini?");
-    if (!confirmed) return;
+    const ok = confirm("Yakin ingin menghapus data mahasiswa ini?");
+    if (!ok) return;
 
     try {
       setMessage("");
       setError("");
       await deleteMahasiswa(id);
-      setMessage("Data mahasiswa berhasil dihapus");
+      setMessage("✅ Data berhasil dihapus!");
       await loadMahasiswa();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal menghapus data");
+    } catch (err: any) {
+      setError(err?.message || "Gagal menghapus data.");
     }
   };
 
-  // Tugas 3 - Pencarian Data menggunakan filter()
-  const filteredMahasiswa = mahasiswa.filter((item) =>
-    item.nama.toLowerCase().includes(search.toLowerCase()) ||
-    item.nim.includes(search)
-  );
+  // =========================
+  // LOGOUT (REMOVED)
+  // =========================
+
+  // =========================
+  // FILTER SEARCH
+  // =========================
+  // Client-side filter dihapus, sekarang menggunakan Server-side filter
+  
+  const canEdit = role === "admin" || role === "operator";
 
   return (
     <main className="container">
+      {/* HEADER */}
       <div className="header">
         <div>
           <h1>CRUD Data Mahasiswa</h1>
-          <p>Kelola data mahasiswa terintegrasi dengan REST API backend.</p>
+          <p>
+            Halo, <strong>{userName}</strong> &mdash; Role:{" "}
+            <span
+              style={{
+                background:
+                  role === "admin"
+                    ? "#fef3c7"
+                    : role === "operator"
+                    ? "#ede9fe"
+                    : "#ecfdf5",
+                color:
+                  role === "admin"
+                    ? "#92400e"
+                    : role === "operator"
+                    ? "#5b21b6"
+                    : "#065f46",
+                padding: "2px 10px",
+                borderRadius: 20,
+                fontWeight: 700,
+                fontSize: "0.8rem",
+              }}
+            >
+              {role}
+            </span>
+          </p>
         </div>
 
-        <Link href="/">
-          <button className="btn-secondary">Kembali ke Dashboard</button>
-        </Link>
+        <div style={{ display: "flex", gap: 12 }}>
+          <a href="/">
+            <button className="btn-secondary">🏠 Home</button>
+          </a>
+        </div>
       </div>
 
-      {message && (
-        <div className="message success">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-            <polyline points="22 4 12 14.01 9 11.01" />
-          </svg>
-          {message}
-        </div>
-      )}
-      {error && (
-        <div className="message error">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          {error}
-        </div>
-      )}
+      {/* MESSAGES */}
+      {message && <div className="message success">{message}</div>}
+      {error && <div className="message error">{error}</div>}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "24px" }}>
+      {/* FORM — hanya tampil jika admin/operator */}
+      {canEdit && (
         <MahasiswaForm
           selectedMahasiswa={selectedMahasiswa}
+          prodiList={prodiList}
           onSubmit={handleSubmit}
           onCancelEdit={() => setSelectedMahasiswa(null)}
         />
+      )}
 
-        <section className="card">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "16px" }}>
-            <h2 style={{ margin: 0 }}>Daftar Mahasiswa</h2>
+      {!canEdit && (
+        <div
+          className="card"
+          style={{ textAlign: "center", color: "var(--text-muted)", padding: "20px" }}
+        >
+          ℹ️ Anda login sebagai <strong>viewer</strong>. Hanya dapat melihat data.
+        </div>
+      )}
+
+      {/* TABLE + SEARCH */}
+      <section className="card" style={{ marginTop: 24 }}>
+        <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", justifyContent: "space-between" }}>
+          <h2 style={{ margin: 0 }}>📋 Daftar Mahasiswa</h2>
+          
+          <div style={{ display: "flex", gap: "12px", flex: 1, minWidth: "300px", justifyContent: "flex-end" }}>
+            <select
+              value={filterProdi}
+              onChange={(e) => {
+                setFilterProdi(e.target.value);
+                setPage(1); // Reset page on filter
+              }}
+              style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid var(--border)", background: "#fff" }}
+            >
+              <option value="">-- Semua Prodi --</option>
+              {prodiList.map((p) => (
+                <option key={p.id} value={p.id}>{p.nama_prodi}</option>
+              ))}
+            </select>
             
-            {/* Tugas 3 - Search bar input */}
-            <div style={{ position: "relative", flex: 1, maxWidth: "320px", marginLeft: "auto" }}>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nama mahasiswa..."
-                style={{ width: "100%", padding: "10px 12px 10px 36px", borderRadius: "8px", border: "1px solid var(--border)" }}
-              />
-              <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", display: "flex", alignItems: "center" }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8" />
-                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-              </span>
-            </div>
+            <input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1); // Reset page on search
+              }}
+              placeholder="🔍 Cari nama atau NIM..."
+              style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid var(--border)", minWidth: "200px" }}
+            />
           </div>
+        </div>
 
-          {loading ? (
-            <div className="loading-wrapper">
-              <div className="spinner"></div>
-              <p>Memuat data...</p>
-            </div>
-          ) : (
+        {loading ? (
+          <div className="loading-wrapper">
+            <div className="spinner"></div>
+            <p>Memuat data mahasiswa...</p>
+          </div>
+        ) : (
+          <>
             <MahasiswaTable
-              mahasiswa={filteredMahasiswa}
+              mahasiswa={mahasiswa}
+              role={role}
               onEdit={setSelectedMahasiswa}
               onDelete={handleDelete}
             />
-          )}
-        </section>
-      </div>
+            
+            {/* Pagination Controls */}
+            {totalPage > 1 && (
+              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "16px", marginTop: "24px" }}>
+                <button
+                  className="btn-secondary"
+                  style={{ padding: "8px 16px" }}
+                  disabled={page === 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                >
+                  &laquo; Prev
+                </button>
+                <span style={{ fontWeight: 600 }}>
+                  Halaman {page} dari {totalPage}
+                </span>
+                <button
+                  className="btn-secondary"
+                  style={{ padding: "8px 16px" }}
+                  disabled={page === totalPage}
+                  onClick={() => setPage(p => Math.min(totalPage, p + 1))}
+                >
+                  Next &raquo;
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </section>
     </main>
   );
 }
