@@ -37,7 +37,7 @@ export async function initializeDatabase() {
 
     // 3. Create tables if they do not exist
     console.log(`Menginisialisasi tabel untuk database '${dbName}'...`);
-    
+
     // Prodi table (harus dibuat sebelum mahasiswa karena FK)
     await pool.query(`
       CREATE TABLE IF NOT EXISTS prodi (
