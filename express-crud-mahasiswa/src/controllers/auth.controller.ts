@@ -94,3 +94,34 @@ export const login = async (req: Request, res: Response) => {
 export const logout = (req: Request, res: Response) => {
   return res.json({ message: "Logout berhasil. Hapus token di frontend." });
 };
+
+// POST /api/auth/forgot-password-direct
+export const directResetPassword = async (req: Request, res: Response) => {
+  try {
+    const { email, newPassword, confirmPassword } = req.body;
+
+    if (!email || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: "Email, password baru, dan konfirmasi wajib diisi" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Password baru dan konfirmasi tidak cocok" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Password minimal 6 karakter" });
+    }
+
+    const rows: any = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    if (!rows || rows.length === 0) {
+      return res.status(404).json({ message: "Email tidak ditemukan" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.query("UPDATE users SET password = ? WHERE email = ?", [hashedPassword, email]);
+
+    return res.json({ message: "Password berhasil diubah. Silakan login dengan password baru." });
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || "Terjadi kesalahan server" });
+  }
+};
