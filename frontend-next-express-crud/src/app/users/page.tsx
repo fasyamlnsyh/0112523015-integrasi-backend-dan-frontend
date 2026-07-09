@@ -107,7 +107,7 @@ export default function UsersPage() {
         // Update
         const { password, ...updatePayload } = formData;
         await updateUser(editId, updatePayload);
-        setMessage("✅ User berhasil diupdate!");
+        setMessage("User berhasil diupdate!");
       } else {
         // Create
         if (!formData.password) {
@@ -115,7 +115,7 @@ export default function UsersPage() {
           return;
         }
         await createUser(formData);
-        setMessage("✅ User berhasil ditambahkan!");
+        setMessage("User berhasil ditambahkan!");
       }
 
       handleCancelEdit();
@@ -133,7 +133,7 @@ export default function UsersPage() {
       setMessage("");
       setError("");
       await deleteUser(id);
-      setMessage("✅ User berhasil dihapus!");
+      setMessage("User berhasil dihapus!");
       await loadUsers();
     } catch (err: any) {
       setError(err?.message || "Gagal menghapus user.");
@@ -149,7 +149,7 @@ export default function UsersPage() {
       setError("");
       const result = await resetPassword(id);
       alert(`Password sementara: ${result.temporaryPassword}\n\nCatat dan berikan kepada user!`);
-      setMessage("✅ Password berhasil direset!");
+      setMessage("Password berhasil direset!");
     } catch (err: any) {
       setError(err?.message || "Gagal mereset password.");
     }
@@ -185,10 +185,10 @@ export default function UsersPage() {
 
         <div style={{ display: "flex", gap: 12 }}>
           <button className="btn-secondary" onClick={() => router.push("/mahasiswa")}>
-            📚 Data Mahasiswa
+            Data Mahasiswa
           </button>
           <button className="btn-danger" onClick={logout}>
-            🚪 Logout
+            Logout
           </button>
         </div>
       </div>
@@ -199,7 +199,7 @@ export default function UsersPage() {
 
       {/* FORM */}
       <div className="card" style={{ marginBottom: 24 }}>
-        <h2>{isEditing ? "✏️ Edit User" : "➕ Tambah User Baru"}</h2>
+        <h2>{isEditing ? "Edit User" : "Tambah User Baru"}</h2>
         <form onSubmit={handleSubmit} style={{ display: "grid", gap: "16px", gridTemplateColumns: "1fr 1fr" }}>
           
           <div className="form-group">
@@ -261,7 +261,7 @@ export default function UsersPage() {
 
       {/* TABLE */}
       <section className="card">
-        <h2 style={{ marginBottom: 16 }}>📋 Daftar User</h2>
+        <h2 style={{ marginBottom: 16 }}>Daftar User</h2>
 
         {loading ? (
           <div className="loading-wrapper">

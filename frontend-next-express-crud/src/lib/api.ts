@@ -155,3 +155,15 @@ export async function registerAPI(name: string, email: string, password: string)
   if (!res.ok) throw new Error(data.message || "Registrasi gagal");
   return data;
 }
+
+// AUTH - forgot password direct
+export async function forgotPasswordDirectAPI(email: string, newPassword: string, confirmPassword: string) {
+  const res = await fetch(`${API_URL}/auth/forgot-password-direct`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, newPassword, confirmPassword }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Gagal mengubah password");
+  return data;
+}

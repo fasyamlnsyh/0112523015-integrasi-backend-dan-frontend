@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveAuth } from "@/lib/auth";
-import { loginAPI, registerAPI } from "@/lib/api";
+import { loginAPI, registerAPI, forgotPasswordDirectAPI } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "forgot-password">("login");
 
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -25,11 +25,16 @@ export default function LoginPage() {
         const data = await loginAPI(form.email, form.password);
         saveAuth(data.token, data.user);
         router.push("/mahasiswa");
-      } else {
+      } else if (mode === "register") {
         await registerAPI(form.name, form.email, form.password);
         setSuccessMsg("Registrasi berhasil! Silakan login.");
         setMode("login");
-        setForm({ name: "", email: form.email, password: "" });
+        setForm({ name: "", email: form.email, password: "", confirmPassword: "" });
+      } else if (mode === "forgot-password") {
+        await forgotPasswordDirectAPI(form.email, form.password, form.confirmPassword);
+        setSuccessMsg("Password berhasil diubah! Silakan login dengan password baru.");
+        setMode("login");
+        setForm({ name: "", email: form.email, password: "", confirmPassword: "" });
       }
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan");
@@ -96,12 +101,14 @@ export default function LoginPage() {
               marginBottom: "4px",
             }}
           >
-            {mode === "login" ? "Selamat Datang" : "Buat Akun Baru"}
+            {mode === "login" ? "Selamat Datang" : mode === "register" ? "Buat Akun Baru" : "Lupa Password"}
           </h1>
           <p style={{ color: "#64748b", fontSize: "0.9rem" }}>
             {mode === "login"
               ? "Login untuk mengakses sistem mahasiswa"
-              : "Isi data di bawah untuk mendaftar"}
+              : mode === "register"
+              ? "Isi data di bawah untuk mendaftar"
+              : "Masukkan email dan password baru Anda"}
           </p>
         </div>
 
@@ -119,7 +126,7 @@ export default function LoginPage() {
               fontWeight: 500,
             }}
           >
-            ⚠️ {error}
+            {error}
           </div>
         )}
         {successMsg && (
@@ -135,7 +142,7 @@ export default function LoginPage() {
               fontWeight: 500,
             }}
           >
-            ✅ {successMsg}
+            {successMsg}
           </div>
         )}
 
@@ -189,7 +196,7 @@ export default function LoginPage() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <label style={{ fontSize: "0.875rem", fontWeight: 600, color: "#374151" }}>
-              Password
+              {mode === "forgot-password" ? "Password Baru" : "Password"}
             </label>
             <input
               type="password"
@@ -209,6 +216,31 @@ export default function LoginPage() {
               }}
             />
           </div>
+
+          {mode === "forgot-password" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "0.875rem", fontWeight: 600, color: "#374151" }}>
+                Konfirmasi Password Baru
+              </label>
+              <input
+                type="password"
+                placeholder="Ulangi password baru"
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                required
+                minLength={6}
+                style={{
+                  padding: "12px 14px",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "10px",
+                  fontSize: "0.95rem",
+                  outline: "none",
+                  fontFamily: "inherit",
+                  background: "#f9fafb",
+                }}
+              />
+            </div>
+          )}
 
           <button
             type="submit"
@@ -233,8 +265,10 @@ export default function LoginPage() {
             {loading
               ? "Memproses..."
               : mode === "login"
-              ? "🔐 Masuk"
-              : "📝 Daftar"}
+              ? "Masuk"
+              : mode === "register"
+              ? "Daftar"
+              : "Simpan Password Baru"}
           </button>
         </form>
 
@@ -263,6 +297,28 @@ export default function LoginPage() {
               >
                 Daftar sekarang
               </button>
+              <div style={{ marginTop: "12px" }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("forgot-password");
+                    setError("");
+                    setSuccessMsg("");
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "#ef4444",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    fontSize: "0.85rem",
+                    fontFamily: "inherit",
+                    padding: 0,
+                  }}
+                >
+                  Lupa Password?
+                </button>
+              </div>
             </>
           ) : (
             <>
@@ -303,7 +359,7 @@ export default function LoginPage() {
             lineHeight: 1.6,
           }}
         >
-          💡 <strong>Akun default admin:</strong><br />
+          <strong>Akun default admin:</strong><br />
           Jika belum ada akun, silakan daftar terlebih dahulu. Role default adalah <em>viewer</em>.
         </div>
       </div>

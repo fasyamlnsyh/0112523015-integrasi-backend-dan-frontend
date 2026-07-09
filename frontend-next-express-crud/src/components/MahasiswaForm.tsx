@@ -76,7 +76,7 @@ export default function MahasiswaForm({
 
   return (
     <form onSubmit={handleSubmit} className="card">
-      <h2>{selectedMahasiswa ? "✏️ Edit Mahasiswa" : "➕ Tambah Mahasiswa"}</h2>
+      <h2>{selectedMahasiswa ? "Edit Mahasiswa" : "Tambah Mahasiswa"}</h2>
 
       <div className="grid">
         <div className="form-group">

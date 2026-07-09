@@ -189,14 +189,14 @@ export default function MahasiswaPage() {
 
         <div style={{ display: "flex", gap: 12 }}>
           <a href="/">
-            <button className="btn-secondary">🏠 Home</button>
+            <button className="btn-secondary">Home</button>
           </a>
           {role === "admin" && (
             <button className="btn-secondary" onClick={() => router.push("/users")}>
-              👥 Kelola User
+              Kelola User
             </button>
           )}
-          <button className="btn-danger" onClick={handleLogout}>🚪 Logout</button>
+          <button className="btn-danger" onClick={handleLogout}>Logout</button>
         </div>
       </div>
 
@@ -219,14 +219,14 @@ export default function MahasiswaPage() {
           className="card"
           style={{ textAlign: "center", color: "var(--text-muted)", padding: "20px" }}
         >
-          ℹ️ Anda login sebagai <strong>{role}</strong>. Hanya dapat melihat data.
+          Anda login sebagai <strong>{role}</strong>. Hanya dapat melihat data.
         </div>
       )}
 
       {/* TABLE + SEARCH */}
       <section className="card" style={{ marginTop: 24 }}>
         <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", justifyContent: "space-between" }}>
-          <h2 style={{ margin: 0 }}>📋 Daftar Mahasiswa</h2>
+          <h2 style={{ margin: 0 }}>Daftar Mahasiswa</h2>
           
           <div style={{ display: "flex", gap: "12px", flex: 1, minWidth: "300px", justifyContent: "flex-end" }}>
             <select
