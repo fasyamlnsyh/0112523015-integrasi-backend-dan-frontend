@@ -118,7 +118,15 @@ export async function initializeDatabase() {
         "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
         ["Admin", "admin@kampus.ac.id", hashedPassword, "admin"]
       );
-      console.log("✅ Akun admin default dibuat: admin@kampus.ac.id / admin123");
+      await pool.query(
+        "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
+        ["Operator", "operator@kampus.ac.id", hashedPassword, "operator"]
+      );
+      await pool.query(
+        "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
+        ["Viewer", "viewer@kampus.ac.id", hashedPassword, "viewer"]
+      );
+      console.log("✅ Akun test (admin, operator, viewer) berhasil dibuat.");
     }
 
     console.log("Database dan tabel siap digunakan.");

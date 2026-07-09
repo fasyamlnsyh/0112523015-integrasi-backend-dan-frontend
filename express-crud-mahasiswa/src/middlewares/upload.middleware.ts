@@ -31,6 +31,6 @@ export const uploadFotoMahasiswa = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2 MB
+    fileSize: 10 * 1024 * 1024, // 10 MB
   },
 });

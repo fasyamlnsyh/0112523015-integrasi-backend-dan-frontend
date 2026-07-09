@@ -7,13 +7,15 @@ import {
 } from "../controllers/mahasiswa.controller";
 import { uploadFotoMahasiswa } from "../middlewares/upload.middleware";
 import { authMiddleware } from "../middlewares/auth.middleware";
+import { allowRoles } from "../middlewares/role.middleware";
 
 const router = Router();
 
-// GET - Semua role boleh akses
+// GET - Semua role boleh akses (admin, operator, viewer)
 router.get(
   "/",
   authMiddleware,
+  allowRoles("admin", "operator", "viewer"),
   getAllMahasiswa
 );
 
@@ -21,6 +23,7 @@ router.get(
 router.post(
   "/",
   authMiddleware,
+  allowRoles("admin", "operator"),
   uploadFotoMahasiswa.single("foto"),
   createMahasiswa
 );
@@ -29,6 +32,7 @@ router.post(
 router.put(
   "/:id",
   authMiddleware,
+  allowRoles("admin", "operator"),
   uploadFotoMahasiswa.single("foto"),
   updateMahasiswa
 );
@@ -37,6 +41,7 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
+  allowRoles("admin"),
   deleteMahasiswa
 );
 
