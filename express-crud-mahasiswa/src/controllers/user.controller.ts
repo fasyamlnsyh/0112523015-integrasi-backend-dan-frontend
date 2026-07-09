@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
 import db from "../config/db";
+import { mailer } from "../config/mail";
 
 // GET /api/users - Admin only
 export const getAllUsers = async (req: Request, res: Response) => {
@@ -131,6 +133,53 @@ export const resetPasswordByAdmin = async (req: Request, res: Response) => {
       temporaryPassword,
       note: "Tampilkan hanya sekali, lalu minta user mengganti password.",
     });
+  } catch (error: any) {
+    return res.status(500).json({ message: error.message || "Terjadi kesalahan server" });
+  }
+};
+
+// POST /api/users/request-reset
+export const requestPasswordReset = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email wajib diisi" });
+    }
+
+    const [users]: any = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+    if (users.length === 0) {
+      return res.status(404).json({ message: "Email tidak ditemukan" });
+    }
+    const user = users[0];
+
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(rawToken).digest("hex");
+    
+    // Expires in 30 minutes
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+    await db.query(
+      "INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, ?)",
+      [user.id, tokenHash, expiresAt]
+    );
+
+    const appUrl = process.env.APP_URL || "http://localhost:3001";
+
+    await mailer.sendMail({
+      from: `Admin Kampus <${process.env.MAIL_USER}>`,
+      to: user.email,
+      subject: "Reset Password",
+      html: `
+        <p>Anda meminta reset password.</p>
+        <p>Klik link berikut untuk mengganti password:</p>
+        <a href="${appUrl}/reset-password?token=${rawToken}">
+          Reset Password
+        </a>
+        <p>Link berlaku selama 30 menit.</p>
+      `,
+    });
+
+    return res.json({ message: "Link reset password telah dikirim ke email Anda" });
   } catch (error: any) {
     return res.status(500).json({ message: error.message || "Terjadi kesalahan server" });
   }
