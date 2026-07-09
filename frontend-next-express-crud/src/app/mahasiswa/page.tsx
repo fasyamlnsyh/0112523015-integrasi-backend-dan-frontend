@@ -191,6 +191,11 @@ export default function MahasiswaPage() {
           <a href="/">
             <button className="btn-secondary">🏠 Home</button>
           </a>
+          {role === "admin" && (
+            <button className="btn-secondary" onClick={() => router.push("/users")}>
+              👥 Kelola User
+            </button>
+          )}
           <button className="btn-danger" onClick={handleLogout}>🚪 Logout</button>
         </div>
       </div>
