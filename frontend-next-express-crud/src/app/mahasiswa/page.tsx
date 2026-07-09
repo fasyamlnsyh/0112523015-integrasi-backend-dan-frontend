@@ -31,13 +31,22 @@ export default function MahasiswaPage() {
   const [filterProdi, setFilterProdi] = useState("");
   const [page, setPage] = useState(1);
   const [totalPage, setTotalPage] = useState(1);
-  const [role, setRole] = useState<string | null>("admin");
-  const [userName, setUserName] = useState<string>("Admin (Bypass)");
+  const [role, setRole] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>("");
 
   // =========================
-  // AUTH GUARD (REMOVED)
+  // AUTH GUARD & ROLE
   // =========================
-  
+  useEffect(() => {
+    const user = getUser();
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    setRole(user.role);
+    setUserName(user.name || user.email);
+  }, [router]);
+
   // =========================
   // LOAD DATA
   // =========================
@@ -130,15 +139,20 @@ export default function MahasiswaPage() {
   };
 
   // =========================
-  // LOGOUT (REMOVED)
+  // LOGOUT
   // =========================
+  const handleLogout = () => {
+    logout();
+  };
 
   // =========================
   // FILTER SEARCH
   // =========================
   // Client-side filter dihapus, sekarang menggunakan Server-side filter
-  
+
+  const canCreate = role === "admin" || role === "operator";
   const canEdit = role === "admin" || role === "operator";
+  const canDelete = role === "admin";
 
   return (
     <main className="container">
@@ -177,6 +191,7 @@ export default function MahasiswaPage() {
           <a href="/">
             <button className="btn-secondary">🏠 Home</button>
           </a>
+          <button className="btn-danger" onClick={handleLogout}>🚪 Logout</button>
         </div>
       </div>
 
@@ -185,7 +200,7 @@ export default function MahasiswaPage() {
       {error && <div className="message error">{error}</div>}
 
       {/* FORM — hanya tampil jika admin/operator */}
-      {canEdit && (
+      {canCreate && (
         <MahasiswaForm
           selectedMahasiswa={selectedMahasiswa}
           prodiList={prodiList}
@@ -194,12 +209,12 @@ export default function MahasiswaPage() {
         />
       )}
 
-      {!canEdit && (
+      {!canCreate && (
         <div
           className="card"
           style={{ textAlign: "center", color: "var(--text-muted)", padding: "20px" }}
         >
-          ℹ️ Anda login sebagai <strong>viewer</strong>. Hanya dapat melihat data.
+          ℹ️ Anda login sebagai <strong>{role}</strong>. Hanya dapat melihat data.
         </div>
       )}
 
@@ -245,7 +260,7 @@ export default function MahasiswaPage() {
             <MahasiswaTable
               mahasiswa={mahasiswa}
               role={role}
-              onEdit={setSelectedMahasiswa}
+              onEdit={(item) => canEdit && setSelectedMahasiswa(item)}
               onDelete={handleDelete}
             />
             

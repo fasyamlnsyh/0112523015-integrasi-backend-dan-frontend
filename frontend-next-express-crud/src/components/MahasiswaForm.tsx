@@ -143,7 +143,7 @@ export default function MahasiswaForm({
         </div>
 
         <div className="form-group" style={{ gridColumn: "1 / -1" }}>
-          <label htmlFor="foto">Foto Mahasiswa (JPG/PNG/WEBP, maks 2MB)</label>
+          <label htmlFor="foto">Foto Mahasiswa (JPG/PNG/WEBP, maks 10MB)</label>
           <input
             id="foto"
             type="file"
